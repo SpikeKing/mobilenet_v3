@@ -18,3 +18,5 @@ num classes:  100
 [Info] 输出值: 24.81878662109375, 类别: man
 [Info] 输出值: 19.06907081604004, 类别: baby
 ```
+
+[参考](https://github.com/leaderj1001/MobileNetV3-Pytorch)
