@@ -99,7 +99,7 @@ class MobileBlock(nn.Module):
         else:
             activation = h_swish
 
-        self.point_conv1 = nn.Sequential(
+        self.conv = nn.Sequential(
             nn.Conv2d(in_channels, exp_size, kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(exp_size),
             activation(inplace=True)
@@ -113,7 +113,7 @@ class MobileBlock(nn.Module):
         if self.SE:
             self.squeeze_block = SqueezeBlock(exp_size)
 
-        self.point_conv2 = nn.Sequential(
+        self.point_conv = nn.Sequential(
             nn.Conv2d(exp_size, out_channels, kernel_size=1, stride=1, padding=0),
             nn.BatchNorm2d(out_channels),
             activation(inplace=True)
@@ -121,7 +121,7 @@ class MobileBlock(nn.Module):
 
     def forward(self, x):
         # MobileNetV2
-        out = self.point_conv1(x)  # 转换通道 in->exp
+        out = self.conv(x)  # 转换通道 in->exp
         out = self.depth_conv(out)  # 深度卷积 exp->exp
 
         # Squeeze and Excite
@@ -129,7 +129,7 @@ class MobileBlock(nn.Module):
             out = self.squeeze_block(out)
 
         # point-wise conv
-        out = self.point_conv2(out) # 转换通道 exp->out
+        out = self.point_conv(out) # 转换通道 exp->out
 
         # connection
         if self.use_connect:
