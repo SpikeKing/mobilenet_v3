@@ -2,7 +2,11 @@
 
 [Paper](https://arxiv.org/abs/1905.02244): https://arxiv.org/abs/1905.02244
 
-测试文件: test_of_mn3.py
+MobileNet v3 网络结构。参考：
+
+[https://zhuanlan.zhihu.com/p/65875440](https://zhuanlan.zhihu.com/p/65875440)
+
+测试: test_of_mn3.py
 
 ``` python
 def test_of_mn3():
@@ -65,4 +69,4 @@ num classes:  100
 [Info] 输出值: 19.06907081604004, 类别: baby
 ```
 
-[参考](https://github.com/leaderj1001/MobileNetV3-Pytorch)
+[源码部分参考](https://github.com/leaderj1001/MobileNetV3-Pytorch)
