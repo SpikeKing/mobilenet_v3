@@ -92,18 +92,19 @@ class MobileBlock(nn.Module):
         self.dropout_rate = dropout_rate
         padding = (kernal_size - 1) // 2
 
-        self.use_connect = stride == 1 and in_channels == out_channels
+        self.use_connect = (stride == 1 and in_channels == out_channels)  # 残差条件
 
         if self.nonLinear == "RE":
             activation = nn.ReLU
         else:
             activation = h_swish
 
-        self.conv = nn.Sequential(
+        self.point_conv1 = nn.Sequential(
             nn.Conv2d(in_channels, exp_size, kernel_size=1, stride=1, padding=0, bias=False),
             nn.BatchNorm2d(exp_size),
             activation(inplace=True)
         )
+
         self.depth_conv = nn.Sequential(
             nn.Conv2d(exp_size, exp_size, kernel_size=kernal_size, stride=stride, padding=padding, groups=exp_size),
             nn.BatchNorm2d(exp_size),
@@ -112,7 +113,7 @@ class MobileBlock(nn.Module):
         if self.SE:
             self.squeeze_block = SqueezeBlock(exp_size)
 
-        self.point_conv = nn.Sequential(
+        self.point_conv2 = nn.Sequential(
             nn.Conv2d(exp_size, out_channels, kernel_size=1, stride=1, padding=0),
             nn.BatchNorm2d(out_channels),
             activation(inplace=True)
@@ -120,15 +121,15 @@ class MobileBlock(nn.Module):
 
     def forward(self, x):
         # MobileNetV2
-        out = self.conv(x)
-        out = self.depth_conv(out)
+        out = self.point_conv1(x)  # 转换通道 in->exp
+        out = self.depth_conv(out)  # 深度卷积 exp->exp
 
         # Squeeze and Excite
         if self.SE:
             out = self.squeeze_block(out)
 
         # point-wise conv
-        out = self.point_conv(out)
+        out = self.point_conv2(out) # 转换通道 exp->out
 
         # connection
         if self.use_connect:
@@ -149,10 +150,11 @@ class MobileNetV3(nn.Module):
                 [16, 16, 3, 1, "RE", False, 16],
                 [16, 24, 3, 2, "RE", False, 64],
                 [24, 24, 3, 1, "RE", False, 72],
+
                 [24, 40, 5, 2, "RE", True, 72],
                 [40, 40, 5, 1, "RE", True, 120],
-
                 [40, 40, 5, 1, "RE", True, 120],
+
                 [40, 80, 3, 2, "HS", False, 240],
                 [80, 80, 3, 1, "HS", False, 200],
                 [80, 80, 3, 1, "HS", False, 184],
@@ -245,10 +247,17 @@ class MobileNetV3(nn.Module):
         self.apply(_weights_init)
 
     def forward(self, x):
+        # 起始部分
         out = self.init_conv(x)
+
+        # 中间部分
         out = self.block(out)
+
+        # 最后部分
         out = self.out_conv1(out)
         batch, channels, height, width = out.size()
         out = F.avg_pool2d(out, kernel_size=[height, width])
-        out = self.out_conv2(out).view(batch, -1)
+        out = self.out_conv2(out)
+
+        out = out.view(batch, -1)
         return out
